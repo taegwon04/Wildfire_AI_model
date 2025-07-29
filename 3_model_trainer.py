@@ -1,5 +1,5 @@
-import ipywidgets as widgets
 from IPython.display import display, Markdown, HTML
+import ipywidgets as widgets
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 
@@ -18,8 +18,8 @@ def display_metrics(acc, report_dict, model_name, feature_names):
     display(Markdown(f"### 🔎 사용한 변수: {', '.join([f'`{v}`' for v in feature_names])}"))
 
     display(Markdown("## ✅ **모델 정확도**"))
-    display(Markdown(f"<div style='font-size: 24px; font-weight: bold; color: green;'>📈 정확도: {acc*100:.2f}%</div>", unsafe_allow_html=True))
-    display(Markdown("<p style='font-size: 14px;'>✔️ 정확도는 전체 데이터 중 모델이 올바르게 예측한 비율입니다.</p>", unsafe_allow_html=True))
+    display(HTML(f"<div style='font-size: 24px; font-weight: bold; color: green;'>📈 정확도: {acc*100:.2f}%</div>"))
+    display(HTML("<p style='font-size: 14px;'>✔️ 정확도는 전체 데이터 중 모델이 올바르게 예측한 비율입니다.</p>"))
 
     display(Markdown("## 🔍 클래스별 설명 및 성능"))
 
@@ -45,7 +45,6 @@ def display_metrics(acc, report_dict, model_name, feature_names):
         </tr>
     </table>
     """
-
     display(HTML(table_html))
 
 # 학습 실행 UI 함수
