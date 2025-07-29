@@ -19,8 +19,8 @@ def show_variable_info(df, var_name):
 
     # 변수 설명 출력
     explanation = explanations.get(var_name, f"`{var_name}` 변수에 대한 설명이 없습니다.")
-    display(Markdown(f"### ℹ️ 변수 정보
-{explanation}"))
+    display(Markdown(f"""### ℹ️ 변수 정보  
+{explanation}"""))
 
     # 분포 시각화
     plt.figure(figsize=(8, 4))
@@ -31,3 +31,4 @@ def show_variable_info(df, var_name):
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
     plt.show()
+
