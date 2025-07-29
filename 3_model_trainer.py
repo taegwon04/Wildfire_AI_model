@@ -18,9 +18,11 @@ def display_metrics(acc, report_dict):
 
     table_html = "<table style='border-collapse: collapse; width: 100%;'>"
     table_html += "<tr><th style='border:1px solid #ccc;'>클래스</th><th style='border:1px solid #ccc;'>정확도(예측한 것 중 진짜만 골라낸 비율)</th></tr>"
-    for label in ["0: 비대형 산불", "1: 대형 산불"]:
+    label_names = {"0": "비대형 산불 (0)", "1": "대형 산불 (1)"}
+    for label in ["0", "1"]:
         precision = report_dict[label]["precision"]
-        table_html += f"<tr><td style='border:1px solid #ccc;'>{label}</td><td style='border:1px solid #ccc;'>{precision:.2f}</td></tr>"
+        label_text = label_names[label]
+        table_html += f"<tr><td style='border:1px solid #ccc;'>{label_text}</td><td style='border:1px solid #ccc;'>{precision:.2f}</td></tr>"
     table_html += "</table>"
 
     display(HTML(table_html))
