@@ -17,12 +17,10 @@ def display_metrics(acc, report_dict):
     display(Markdown(f"## ✅ 정확도: **{acc*100:.2f}%**"))
 
     table_html = "<table style='border-collapse: collapse; width: 100%;'>"
-    table_html += "<tr><th style='border:1px solid #ccc;'>클래스</th><th style='border:1px solid #ccc;'>정확도</th></tr>"
-    for label in ["0", "1"]:
+    table_html += "<tr><th style='border:1px solid #ccc;'>클래스</th><th style='border:1px solid #ccc;'>정확도(예측한 것 중 진짜만 골라낸 비율)</th></tr>"
+    for label in ["0: 비대형 산불", "1: 대형 산불"]:
         precision = report_dict[label]["precision"]
-        recall = report_dict[label]["recall"]
-        f1 = report_dict[label]["f1-score"]
-        table_html += f"<tr><td style='border:1px solid #ccc;'>{label}</td><td style='border:1px solid #ccc;'>{precision:.2f}</td><td style='border:1px solid #ccc;'>{recall:.2f}</td><td style='border:1px solid #ccc;'>{f1:.2f}</td></tr>"
+        table_html += f"<tr><td style='border:1px solid #ccc;'>{label}</td><td style='border:1px solid #ccc;'>{precision:.2f}</td></tr>"
     table_html += "</table>"
 
     display(HTML(table_html))
