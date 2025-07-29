@@ -50,7 +50,7 @@ def show_result_emoji(prob):
         emoji = "🔴"
     elif prob >= 0.4:
         emoji = "🟡"
-    display(Markdown(f"### 예측 위험도: {emoji} ({prob*100:.1f}%)"))
+    display(Markdown(f"### 대형 산불 발생 확률: {emoji} ({prob*100:.1f}%)"))
 
 def show_result_color(prob):
     color = "#28a745" if prob < 0.4 else "#ffc107" if prob < 0.7 else "#dc3545"
@@ -77,7 +77,7 @@ def prediction_widget_ui(model, variables, input_type, output_styles):
             df_input = pd.DataFrame([values], columns=variables)
             prob = model.predict_proba(df_input)[0][1]
 
-            display(Markdown(f"## 🔍 예측 확률: **{prob*100:.1f}%**"))
+            display(Markdown(f"## 🔍 대형 산불 발생 확률: **{prob*100:.1f}%**"))
 
             for style in output_styles:
                 if style == "게이지바":
