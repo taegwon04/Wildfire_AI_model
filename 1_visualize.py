@@ -1,4 +1,3 @@
-
 import seaborn as sns
 import matplotlib.pyplot as plt
 from IPython.display import display, Markdown, HTML
@@ -25,9 +24,9 @@ def show_variable_info(df, var_name):
     # 분포 시각화
     plt.figure(figsize=(8, 4))
     sns.histplot(df[var_name].dropna(), kde=True, color="#3B82F6", edgecolor="black")
-    plt.title(f"📊 {var_name} 분포", fontsize=14)
+    plt.title(f"📊 {var_name} ", fontsize=14)
     plt.xlabel(var_name)
-    plt.ylabel("빈도수")
+    plt.ylabel("frequency")
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
     plt.show()
