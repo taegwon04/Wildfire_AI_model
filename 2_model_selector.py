@@ -20,10 +20,12 @@ model_descriptions = {
 
 # 모델 선택 UI
 def model_selector_ui():
-    model_radio = widgets.RadioButtons(
+    model_toggle = widgets.ToggleButtons(
         options=list(model_options.keys()),
         description='🤖 모델 선택:',
-        style={'description_width': '100px'}
+        button_style='',
+        style={'description_width': 'initial'},
+        layout=widgets.Layout(width='500px')
     )
 
     desc_box = widgets.Output()
@@ -35,14 +37,14 @@ def model_selector_ui():
             explanation = model_descriptions[model_name]
             display(Markdown(f"### 📘 모델 설명\n{explanation}"))
 
-    model_radio.observe(on_model_change, names='value')
+    model_toggle.observe(on_model_change, names='value')
 
     # 초기 설명도 표시
     with desc_box:
-        model_name = model_radio.value
+        model_name = model_toggle.value
         explanation = model_descriptions[model_name]
         display(Markdown(f"### 📘 모델 설명\n{explanation}"))
 
-    display(widgets.VBox([model_radio, desc_box]))
+    display(widgets.VBox([model_toggle, desc_box]))
 
-    return lambda: model_options[model_radio.value]
+    return lambda: model_options[model_toggle.value]
