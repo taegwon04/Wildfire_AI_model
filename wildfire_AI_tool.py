@@ -3,6 +3,7 @@ import ipywidgets as widgets
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+import koreanize_matplotlib
 import pandas as pd
 
 from sklearn.ensemble import RandomForestClassifier
