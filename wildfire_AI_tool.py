@@ -91,7 +91,7 @@ def model_selector_ui():
         [model_toggle, desc_box],
         layout=widgets.Layout(
             padding='20px',
-            border='2px solid #2a5298',
+            border='2px solid #2a5298', # 예측 프로그램 빼고 이 색으로 통일일
             border_radius='12px',
             background_color='#1e3c72'
         )
@@ -175,7 +175,7 @@ def run_training_ui(model_fn, df, feature_names):
 
     run_btn.on_click(on_run_click)
 
-    # 실질적인 인터랙티브 위젯 묶음
+    # 인터랙티브 위젯 묶음 컨테이너너
     training_box = widgets.VBox(
         [month_weight_slider, run_btn, output],
         layout=widgets.Layout(
@@ -186,7 +186,7 @@ def run_training_ui(model_fn, df, feature_names):
         )
     )
 
-    # 🔄 둘을 함께 표시
+    # 컨테이너 표시시
     display(training_box)
 
 
@@ -290,7 +290,7 @@ def prediction_widget_ui(model, variables, input_type, output_styles, month_weig
 
     input_widgets = create_input_widgets(input_type, variables, slider_ranges)
     output = widgets.Output()
-    button = widgets.Button( description="🚀 예측 실행",layout=widgets.Layout(width='200px'),style=widgets.ButtonStyle(button_color='#ff9800'))  # 예: 불꽃 주황색
+    button = widgets.Button( description="🚀 예측 실행",layout=widgets.Layout(width='200px'),style=widgets.ButtonStyle(button_color='#ff9800'))  # 불꽃 주황색
 
     def on_click(b):
         with output:
