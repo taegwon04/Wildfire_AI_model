@@ -1,4 +1,5 @@
 from IPython.display import display, Markdown, HTML
+from IPython.display import clear_output
 import ipywidgets as widgets
 
 import seaborn as sns
@@ -15,11 +16,12 @@ from sklearn.metrics import accuracy_score, classification_report
 # 1-----------------------------------------------------------------------------------------------------------------------------------------------------------
 # 변수 설명 사전
 explanations = {
-    "Temp_pre_7": "🌡️ **Temp_pre_7**: 7일 전의 평균 기온 (℃)",
-    "Hum_pre_7": "💧 **Hum_pre_7**: 7일 전의 평균 습도 (%)",
-    "Wind_pre_7": "💨 **Wind_pre_7**: 7일 전의 풍속 (km/h)",
-    "Prec_pre_7": "🌧️ **Prec_pre_7**: 7일 전의 강수량 (mm)",
-    "remoteness": "🌲 **remoteness**: 산불 접근의 어려움 (0~1 사이 값)"
+    "기온": "🌡️ **기온**: 7일 전의 평균 기온 (℃)",
+    "습도": "💧 **습도**: 7일 전의 평균 습도 (%)",
+    "풍속": "💨 **풍속**: 7일 전의 풍속 (km/h)",
+    "강수량": "🌧️ **강수량**: 7일 전의 강수량 (mm)",
+    "고립도": "🌲 **고립도**: 산불 접근의 어려움 (0~1 사이 값) 값이 높을수록 접근이 어려움",
+    "월": "🌕 **월**: 산불 발생 달"
 }
 
 def show_variable_info(df, var_name):
@@ -29,7 +31,7 @@ def show_variable_info(df, var_name):
 
     # 변수 설명 출력
     explanation = explanations.get(var_name, f"`{var_name}` 변수에 대한 설명이 없습니다.")
-    display(Markdown(f"""### ℹ️ 변수 정보  
+    display(Markdown(f"""### ℹ️ 변수 정보
 {explanation}"""))
 
     # 분포 시각화
@@ -50,10 +52,10 @@ model_options = {
     "신경망 (MLP)": MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=500)
 }
 
-# 학생 친화적인 설명
+# 모델 설명
 model_descriptions = {
     "랜덤 포레스트": "🌳 **랜덤 포레스트**는 여러 개의 나무(결정 트리)가 모여서 투표하듯이 예측하는 모델이에요. 정확하고 튼튼한 결과를 잘 만들어냅니다.",
-    "로지스틱 회귀": "📈 **로지스틱 회귀**는 데이터를 기준으로 직선을 하나 그어 분류하는 간단한 모델이에요. 계산이 빠르고 직관적입니다.",
+    "로지스틱 회귀": "📈 **로지스틱 회귀**는 데이터를 기준으로 직선을 하나 그어 각 데이터가 어느 쪽에 속할 확률을 계산해서 결정하는 분류하는 간단한 모델이에요. 계산이 빠르고 직관적입니다.",
     "신경망 (MLP)": "🧠 **신경망(MLP)**은 사람의 뇌처럼 작동하는 구조로, 복잡한 패턴도 잘 찾아내는 모델이에요. 여러 층으로 연결된 뇌세포처럼 동작합니다."
 }
 
@@ -84,9 +86,21 @@ def model_selector_ui():
         explanation = model_descriptions[model_name]
         display(Markdown(f"### 📘 모델 설명\n{explanation}"))
 
-    display(widgets.VBox([model_toggle, desc_box]))
+    # 모델 선택 UI 묶음
+    container = widgets.VBox(
+        [model_toggle, desc_box],
+        layout=widgets.Layout(
+            padding='20px',
+            border='2px solid #2a5298',
+            border_radius='12px',
+            background_color='#1e3c72'
+        )
+    )
+
+    display(container)
 
     return lambda: model_options[model_toggle.value]
+
 # 3-----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # 학습 및 평가 함수
@@ -113,9 +127,15 @@ def display_metrics(acc, report_dict):
 
     display(HTML(table_html))
 
-# 학습 실행 UI 함수
 def run_training_ui(model_fn, df, feature_names):
     output = widgets.Output()
+
+    # 월 변수 가중치 슬라이더
+    month_weight_slider = widgets.FloatSlider(
+        value=1.0, min=0.0, max=3.0, step=0.1,
+        description="📅 월 변수 가중치", continuous_update=False,
+        layout=widgets.Layout(width="400px")
+    )
 
     # 실행 버튼
     run_btn = widgets.Button(description="🚀 모델 학습 시작", button_style='success')
@@ -126,16 +146,50 @@ def run_training_ui(model_fn, df, feature_names):
             display(Markdown("### 🔄 모델을 학습하고 있습니다..."))
             try:
                 model = model_fn()
-                X = df[feature_names]
-                y = df["large_fire"]
-                acc, report = train_and_evaluate_model(model, X, y)
-                display(Markdown("### 🎉 모델 학습 완료! 결과는 다음과 같습니다."))
-                display_metrics(acc, report)
+                df_copy = df.copy()
+
+                df_copy["Month_weighted"] = df_copy["월"] * month_weight_slider.value
+                final_features = feature_names + ["Month_weighted"]
+
+                X = df_copy[final_features]
+                y = df_copy["대형산불"]
+
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+                acc = accuracy_score(y_test, y_pred)
+                report = classification_report(y_test, y_pred, output_dict=True)
+
+                display(Markdown(f"## ✅ 정확도: **{acc*100:.2f}%**"))
+                table_html = "<table><tr><th>클래스</th><th>정확도</th></tr>"
+                label_names = {"0": "비대형 산불 (0)", "1": "대형 산불 (1)"}
+                for label in ["0", "1"]:
+                    label_text = label_names[label]
+                    precision = report[label]["precision"]
+                    table_html += f"<tr><td>{label_text}</td><td>{precision:.2f}</td></tr>"
+                table_html += "</table>"
+
+                display(HTML(table_html))
             except Exception as e:
                 display(Markdown(f"❌ 오류 발생: {str(e)}"))
 
     run_btn.on_click(on_run_click)
-    display(widgets.VBox([run_btn, output]))
+
+    # 실질적인 인터랙티브 위젯 묶음
+    training_box = widgets.VBox(
+        [month_weight_slider, run_btn, output],
+        layout=widgets.Layout(
+            padding='20px',
+            border='2px solid #2a5298',
+            border_radius='12px',
+            background_color='#1e3c72'
+        )
+    )
+
+    # 🔄 둘을 함께 표시
+    display(training_box)
+
+
 # 4-----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # 입력 위젯 생성기
@@ -188,28 +242,70 @@ def show_result_emoji(prob):
     display(Markdown(f"### 대형 산불 발생 확률: {emoji} ({prob*100:.1f}%)"))
 
 def show_result_color(prob):
-    color = "#28a745" if prob < 0.4 else "#ffc107" if prob < 0.7 else "#dc3545"
-    display(HTML(f"<div style='padding:10px; background-color:{color}; color:white;'>🔥 산불 가능성: {prob*100:.1f}%</div>"))
+    # 예측 수준별 색상과 문구
+    if prob < 0.4:
+        color = "#28a745"  # 초록
+        message = "🌱 안전: 산불 가능성 낮음"
+    elif prob < 0.7:
+        color = "#ffc107"  # 노랑
+        message = "⚠️ 경고: 산불 가능성 중간"
+    else:
+        color = "#dc3545"  # 빨강
+        message = "🔥 주의: 산불 가능성 매우 높음"
 
-# 메인 UI 함수
-def prediction_widget_ui(model, variables, input_type, output_styles):
+    # 강제 스타일 적용 및 캐시 무시를 위한 HTML 출력
+    html_code = f"""
+    <div style="
+        background-color: {color};
+        color: white;
+        padding: 20px;
+        margin: 10px 0;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: bold;
+        font-family: 'Segoe UI', sans-serif;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
+        transition: all 0.3s ease-in-out;
+    ">
+        {message} ({prob*100:.1f}%)
+    </div>
+    """
+    clear_output(wait=True)  # 캐시된 출력 지우고 강제로 새로 출력
+    display(HTML(html_code))
+
+# 에측 프로그램
+def prediction_widget_ui(model, variables, input_type, output_styles, month_weight):
     slider_ranges = {
-        "Temp_pre_7": (0, 50, 0.5),
-        "Hum_pre_7": (0, 100, 1),
-        "Wind_pre_7": (0, 20, 0.5),
-        "Prec_pre_7": (0, 300, 1),
-        "remoteness": (0, 1, 0.01)
+        "기온": (0, 50, 0.5),
+        "습도": (0, 100, 1),
+        "풍속": (0, 20, 0.5),
+        "강수량": (0, 300, 1),
+        "고립도": (0, 1, 0.01),
+        "월": (1, 12, 1)  # 월 선택 추가
     }
+
+    # "월"이 포함되어 있지 않으면 강제로 추가
+    if "월" not in variables:
+        variables = variables + ["월"]
 
     input_widgets = create_input_widgets(input_type, variables, slider_ranges)
     output = widgets.Output()
-    button = widgets.Button(description="🚀 예측 실행", button_style="primary")
+    button = widgets.Button( description="🚀 예측 실행",layout=widgets.Layout(width='200px'),style=widgets.ButtonStyle(button_color='#ff9800'))  # 예: 불꽃 주황색
 
     def on_click(b):
         with output:
             output.clear_output()
             values = [input_widgets[var].value for var in variables]
-            df_input = pd.DataFrame([values], columns=variables)
+
+            # 월 처리
+            month_value = input_widgets["월"].value
+            month_weighted = month_value * month_weight
+
+            # '월' 제거하고 Month_weighted만 입력 데이터에 포함
+            input_data = {var: input_widgets[var].value for var in variables if var != "월"}
+            input_data["Month_weighted"] = month_weighted
+
+            df_input = pd.DataFrame([input_data])
             prob = model.predict_proba(df_input)[0][1]
 
             display(Markdown(f"## 🔍 대형 산불 발생 확률: **{prob*100:.1f}%**"))
@@ -225,4 +321,40 @@ def prediction_widget_ui(model, variables, input_type, output_styles):
                     show_result_color(prob)
 
     button.on_click(on_click)
-    display(widgets.VBox([*input_widgets.values(), button, output]))
+
+
+    # UI 레이아웃
+    container = widgets.VBox(
+        [*input_widgets.values(), button, output],
+        layout=widgets.Layout(
+            padding='30px',
+            background_color='#fff3cd',
+            border='2px solid #fff3cd',
+            border_radius='12px',
+            width='100%',
+        )
+    )
+
+    styled_ui = widgets.HTML(
+        value="""
+        <style>
+            .custom-container {
+                background: linear-gradient(to right, #ffcc00, #ff3300);
+                padding: 30px;
+                border-radius: 16px;
+                color: white;
+                font-family: 'Segoe UI', sans-serif;
+                margin-bottom: 20px;
+                box-shadow: 0px 4px 12px rgba(0,0,0,0.3);
+            }
+        </style>
+        <div class="custom-container">
+            <h2 style="margin-top: 0;">🔥 대형 산불 발생 예측 시뮬레이터</h2>
+            <p>아래에서 변수들을 조절하고<br>
+            대형 산불 확률을 예측해 보아요!</p>
+        </div>
+        """
+    )
+    display(widgets.VBox([styled_ui, container]))
+
+
